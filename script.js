@@ -155,69 +155,77 @@ let showChart = false;
 let chartConainterDOM = document.getElementById("chart-container");
 
 
-let after_update = function () {
+let after_update = async function () {
     ready = false;
     document.getElementById("guide").classList.add("d-none");
     hideCanvas();
-    try {
-        console.log('roadnetData[0]=====11111', roadnetData[0]);
-        simulation = JSON.parse(roadnetData[0]);
-    } catch (e) {
-        loading = false;
-        return;
-    }
-    try {
-        console.log('replayData[0]=====22222', replayData[0]);
-        logs = replayData[0].split('\n');
-        logs.pop();
-    } catch (e) {
-        console.error(e);
-        loading = false;
-        return;
-    }
 
-    totalStep = logs.length;
-    console.log(totalStep);
-    console.log(showChart);
-    if (showChart) {
-        chartConainterDOM.classList.remove("d-none");
-        let chart_lines = chartData[0].split('\n');
-        if (chart_lines.length == 0) {
-            showChart = false;
+    await new Promise((resolve, reject) => {
+        try {
+            console.log('roadnetData[0]=====11111', roadnetData[0]);
+            simulation = JSON.parse(roadnetData[0]);
+            resolve();
+        } catch (e) {
+            loading = false;
+            reject(e);
         }
-        chartLog = [];
-        for (let i = 0; i < totalStep; ++i) {
-            step_data = chart_lines[i + 1].split(/[ \t]+/);
-            chartLog.push([]);
-            for (let j = 0; j < step_data.length; ++j) {
-                chartLog[i].push(parseFloat(step_data[j]));
+    });
+
+    await new Promise((resolve, reject) => {
+        try {
+            console.log('replayData[0]=====22222', replayData[0]);
+            logs = replayData[0].split('\n');
+            logs.pop();
+            totalStep = logs.length;
+            console.log(totalStep);
+            console.log(showChart);
+            if (showChart) {
+                chartConainterDOM.classList.remove("d-none");
+                let chart_lines = chartData[0].split('\n');
+                if (chart_lines.length == 0) {
+                    showChart = false;
+                }
+                chartLog = [];
+                for (let i = 0; i < totalStep; ++i) {
+                    step_data = chart_lines[i + 1].split(/[ \t]+/);
+                    chartLog.push([]);
+                    for (let j = 0; j < step_data.length; ++j) {
+                        chartLog[i].push(parseFloat(step_data[j]));
+                    }
+                }
+                chart.init(chart_lines[0], chartLog[0].length, totalStep);
+            } else {
+                chartConainterDOM.classList.add("d-none");
             }
+            resolve();
+        } catch (e) {
+            console.error(e);
+            loading = false;
+            reject(e);
         }
-        chart.init(chart_lines[0], chartLog[0].length, totalStep);
-    } else {
-        chartConainterDOM.classList.add("d-none");
-    }
+    });
 
     controls.paused = false;
     cnt = 0;
     // debugMode = document.getElementById("debug-mode").checked;
     debugMode = false;
-    setTimeout(function () {
-        try {
-            drawRoadnet();
-        } catch (e) {
-            console.error(e.message);
-            loading = false;
-            return;
-        }
-        ready = true;
-        loading = false;
-    }, 200);
 
-    setTimeout(function () {
-        // 执行完路况再 执行 info box。为了保持同步 或者延迟 可进行修改延迟时间
-        infoAppend(afterObject);
-    },1500)
+    await new Promise((resolve, reject) => {
+        setTimeout(function () {
+            try {
+                drawRoadnet();
+                resolve();
+            } catch (e) {
+                console.error(e.message);
+                loading = false;
+                reject(e);
+            }
+        }, 200);
+    });
+
+    ready = true;
+    loading = false;
+    infoAppend(afterObject);
 };
 
 
